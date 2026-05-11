@@ -1,0 +1,6 @@
+@LRP_Proje_Rabia_HostAddress = http://localhost:5164
+
+GET {{LRP_Proje_Rabia_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
