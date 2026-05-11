@@ -8,6 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Veritabaný servisini "Mutfak" kýsmýna ekliyoruz.
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+// builder.Configuration...: Az önce appsettings.json'a yazdýðýmýz yolu oku demektir.
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
