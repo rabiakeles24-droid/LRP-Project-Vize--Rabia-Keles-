@@ -10,5 +10,5 @@
         public string Specs { get; set; } // HDMI, Veyon vb.
         public int LabId { get; set; }
         public int? UserId { get; set; } // Atanan Öğrenci
-    }
+        }
 }

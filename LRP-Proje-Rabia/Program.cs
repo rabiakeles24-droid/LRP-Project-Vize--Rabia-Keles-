@@ -1,5 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+using LRP_Proje_Rabia.Models;
 using LRP_Proje_Rabia.Data;
+using LRP_Proje_Rabia.Endpoints;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +25,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseDefaultFiles();
+
+app.UseStaticFiles();
+
+app.MapAdminEndpoints();
+app.MapAuthEndpoints();
 
 
 app.Run();
