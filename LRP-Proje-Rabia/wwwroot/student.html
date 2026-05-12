@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Öğrenci Paneli | LRP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+
+    <style>
+        :root {
+            --murdum-dark: #3a0a24;
+            --murdum-main: #6b1442;
+            --murdum-light: #fcf0f5;
+            --transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Poppins', sans-serif;
+            color: var(--murdum-dark);
+        }
+
+        /* Üst Header */
+        .header-bg {
+            background: linear-gradient(135deg, var(--murdum-dark), var(--murdum-main));
+            height: 200px;
+            border-radius: 0 0 50px 50px;
+            box-shadow: 0 10px 30px rgba(107, 20, 66, 0.2);
+        }
+
+        /* Profil ve PC Kartı */
+        .main-card {
+            margin-top: -100px;
+            border: none;
+            border-radius: 25px;
+            background: white;
+            transition: var(--transition);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+            .main-card:hover {
+                transform: translateY(-10px);
+                box-shadow: 0 20px 45px rgba(107, 20, 66, 0.15);
+            }
+
+        .pc-icon-box {
+            width: 80px;
+            height: 80px;
+            background: var(--murdum-light);
+            color: var(--murdum-main);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .badge-murdum {
+            background-color: var(--murdum-main);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 12px;
+            transition: var(--transition);
+        }
+
+            .logout-btn:hover {
+                background: white;
+                color: var(--murdum-main);
+            }
+    </style>
+</head>
+<body>
+
+    <div class="header-bg">
+        <div class="container pt-4 d-flex justify-content-between align-items-center">
+            <h3 class="text-white fw-bold"><i class="fas fa-laptop-code me-2"></i>LRP Öğrenci</h3>
+            <button class="logout-btn" onclick="logout()">Çıkış Yap</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card main-card p-5 text-center">
+                    <div class="d-flex justify-content-center">
+                        <div class="pc-icon-box">
+                            <i class="fas fa-desktop"></i>
+                        </div>
+                    </div>
+
+                    <h2 class="fw-bold mb-1" id="studentName">Yükleniyor...</h2>
+                    <p class="text-muted mb-4" id="studentId">Öğrenci No: ---</p>
+
+                    <hr class="my-4" style="opacity: 0.1;">
+
+                    <div id="pcDetails" class="mt-2">
+                        <h5 class="text-secondary mb-3">Zimmetli Bilgisayar Bilgileri</h5>
+                        <div class="row g-3">
+                            <div class="col-6 text-end">
+                                <span class="text-muted">Demirbaş No:</span>
+                            </div>
+                            <div class="col-6 text-start">
+                                <span class="badge-murdum" id="assetCode">---</span>
+                            </div>
+                            <div class="col-6 text-end">
+                                <span class="text-muted">Marka/Model:</span>
+                            </div>
+                            <div class="col-6 text-start">
+                                <strong id="pcBrand">---</strong>
+                            </div>
+                            <div class="col-6 text-end">
+                                <span class="text-muted">Donanım:</span>
+                            </div>
+                            <div class="col-6 text-start">
+                                <small id="pcSpecs">---</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="noPcMessage" class="d-none py-4">
+                        <i class="fas fa-info-circle text-warning mb-2" style="font-size: 2rem;"></i>
+                        <p class="text-muted">Henüz üzerinize zimmetli bir bilgisayar bulunmamaktadır.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadStudentData() {
+            // Localstorage'dan giriş yapan kullanıcı bilgisini al
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) { window.location.href = 'login.html'; return; }
+
+            document.getElementById('studentName').innerText = user.fullName;
+            document.getElementById('studentId').innerText = "Öğrenci No: " + user.username;
+
+            try {
+                // Öğrencinin PC bilgilerini getir
+                const res = await fetch(`/api/student/pc/${user.id}`);
+                if (res.ok) {
+                    const pc = await res.json();
+                    document.getElementById('assetCode').innerText = pc.assetCode;
+                    document.getElementById('pcBrand').innerText = pc.brand;
+                    document.getElementById('pcSpecs').innerText = `${pc.processor} / ${pc.ram}GB RAM`;
+                } else {
+                    document.getElementById('pcDetails').classList.add('d-none');
+                    document.getElementById('noPcMessage').classList.remove('d-none');
+                }
+            } catch (err) {
+                console.error("Hata:", err);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        loadStudentData();
+    </script>
+</body>
+</html>

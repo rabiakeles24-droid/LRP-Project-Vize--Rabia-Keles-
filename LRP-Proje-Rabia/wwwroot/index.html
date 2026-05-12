@@ -1,0 +1,529 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>LRP PANEL | Admin Envanter</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --main: #6b1442;
+            --sidebar-w: 260px;
+        }
+
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* SOL PANEL (SIDEBAR) */
+        .sidebar {
+            background: var(--main);
+            width: var(--sidebar-w);
+            min-height: 100vh;
+            color: white;
+            position: fixed;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,0.7);
+            padding: 15px 25px;
+            cursor: pointer;
+            transition: 0.3s;
+            border-left: 5px solid transparent;
+            text-decoration: none;
+            display: block;
+        }
+
+            .nav-link:hover, .nav-link.active {
+                color: white;
+                background: rgba(255,255,255,0.1);
+                border-left-color: #ffc107;
+                font-weight: 600;
+            }
+
+        .logout-btn {
+            margin-top: auto;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 0;
+        }
+
+        /* İÇERİK ALANI */
+        .content {
+            margin-left: var(--sidebar-w);
+            padding: 30px;
+            transition: 0.3s;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        .section {
+            display: none;
+        }
+
+            .section.active {
+                display: block;
+                animation: fadeIn 0.4s ease;
+            }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* MODERN BUTON VE INPUTLAR */
+        .btn-murdum {
+            background: var(--main);
+            color: white;
+            border-radius: 25px;
+            padding: 10px 20px;
+            border: none;
+            transition: 0.3s;
+            font-weight: 500;
+        }
+
+            .btn-murdum:hover {
+                background: #4d0e2f;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(107, 20, 66, 0.3);
+            }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+            .form-control:focus {
+                border-color: var(--main);
+                box-shadow: 0 0 0 0.25rem rgba(107, 20, 66, 0.1);
+            }
+    </style>
+</head>
+<body>
+
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.role !== 'Admin') { window.location.href = 'login.html'; }
+    </script>
+
+    <div class="sidebar">
+        <div class="p-4 text-center border-bottom border-secondary mb-3">
+            <h3 class="fw-bold m-0">LRP PANEL</h3>
+            <small class="text-warning" id="uDisplayName"></small>
+        </div>
+        <a class="nav-link active" id="n-dash" onclick="showPage('dash')"><i class="bi bi-cpu-fill me-2"></i> Panel </a>
+        <a class="nav-link" id="n-labs" onclick="showPage('labs')"><i class="bi bi-building-fill me-2"></i> Laboratuvarlar</a>
+        <a class="nav-link" id="n-pcs" onclick="showPage('pcs')"><i class="bi bi-pc-display-horizontal me-2"></i> Bilgisayarlar</a>
+        <a class="nav-link" id="n-assign" onclick="showPage('assign')"><i class="bi bi-person-check-fill me-2"></i> Zimmetleme</a>
+
+        <div class="logout-btn">
+            <a class="nav-link text-danger" onclick="logout()"><i class="bi bi-door-open-fill me-2"></i> Güvenli Çıkış</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="dash" class="section active">
+            <h2 class="mb-4 fw-bold">Genel Durum</h2>
+            <div class="row g-4 text-center">
+                <div class="col-md-4"><div class="card p-4"><h6>Lab Sayısı</h6><h1 id="s-lab" class="text-primary">0</h1></div></div>
+                <div class="col-md-4"><div class="card p-4"><h6>Toplam PC</h6><h1 id="s-pc" class="text-success">0</h1></div></div>
+                <div class="col-md-4"><div class="card p-4"><h6>Zimmetli</h6><h1 id="s-as" class="text-danger">0</h1></div></div>
+            </div>
+        </div>
+
+        <div id="labs" class="section">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card p-4">
+                        <h5 class="mb-4 border-bottom pb-2">Laboratuvar Yönetimi</h5>
+                        <table class="table align-middle">
+                            <tbody id="labList"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-4">
+                        <h5>Yeni Lab Ekle</h5>
+                        <input type="text" id="lName" class="form-control mb-3" placeholder="Örn: Yazılım Laboratuvarı">
+                        <button class="btn btn-murdum w-100" onclick="addLab()">Lab Oluştur</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="pcs" class="section">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card p-4">
+                        <h5 class="mb-4 border-bottom pb-2">Bilgisayar Envanteri</h5>
+                        <table class="table table-hover">
+                            <thead class="table-light"><tr><th>Kod</th><th>Lab</th><th>Model</th><th>Özellikler</th><th class="text-end">İşlem</th></tr></thead>
+                            <tbody id="pcList"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-4 shadow-sm" style="position: sticky; top: 20px;">
+                        <h5 class="mb-3 text-primary">Yeni Bilgisayar Kaydı</h5>
+                        <label class="small fw-bold">LABORATUVAR</label>
+                        <select id="pcLab" class="form-select mb-2"></select>
+                        <input type="text" id="pcMod" class="form-control mb-2" placeholder="Marka/Model">
+                        <input type="text" id="pcCpu" class="form-control mb-2" placeholder="İşlemci (i7, Ryzen 5 vb.)">
+                        <input type="text" id="pcRam" class="form-control mb-2" placeholder="RAM (16GB, 32GB)">
+                        <input type="text" id="pcSt" class="form-control mb-3" placeholder="Depolama (512GB SSD)">
+                        <button class="btn btn-murdum w-100" onclick="addPC()">Envantere Ekle</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="assign" class="section">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card p-4">
+                        <h5 class="mb-3 text-success">Atama Yap</h5>
+                        <label class="small fw-bold">BOŞTAKİ PC</label>
+                        <select id="asPc" class="form-select mb-2"></select>
+                        <input type="text" id="asSid" class="form-control mb-2" placeholder="Öğrenci Numarası">
+                        <input type="text" id="asSname" class="form-control mb-3" placeholder="Öğrenci Ad Soyad">
+                        <button type="button" onclick="doAssign()" class="btn w-100 text-white" style="background-color: #6b1442;">Zimmetle</button>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card p-4">
+                        <h5>Zimmet Listesi</h5>
+                        <table class="table">
+                            <thead class="table-light"><tr><th>PC</th><th>Öğrenci</th><th>Numara</th><th class="text-end">Eylem</th></tr></thead>
+                            <tbody id="asList"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Kullanıcı adını göster
+        if (user) document.getElementById('uDisplayName').innerText = user.fullName;
+
+        // SAYFA GEZİNTİSİ
+        function showPage(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.getElementById('n-' + id).classList.add('active');
+
+            if (id === 'dash') loadStats();
+            if (id === 'labs') loadLabs();
+            if (id === 'pcs') loadPcs();
+            if (id === 'assign') loadAssigns();
+        }
+
+        // --- DASHBOARD ---
+        async function loadStats() {
+            const l = await fetch('/api/labs').then(r => r.json());
+            const p = await fetch('/api/computers').then(r => r.json());
+            const a = await fetch('/api/assignments').then(r => r.json());
+            document.getElementById('s-lab').innerText = l.length;
+            document.getElementById('s-pc').innerText = p.length;
+            document.getElementById('s-as').innerText = a.length;
+        }
+
+        // --- LABORATUVAR ---
+        async function loadLabs() {
+            const data = await fetch('/api/labs').then(r => r.json());
+            document.getElementById('labList').innerHTML = data.map(l => `
+                <tr>
+                    <td><i class="bi bi-building me-2 text-secondary"></i><b>${l.name || l.Name}</b></td>
+                    <td class="text-end"><button class="btn btn-sm btn-outline-danger border-0" onclick="delLab(${l.id || l.Id})"><i class="bi bi-trash"></i></button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function addLab() {
+            const input = document.getElementById('lName');
+            const name = input.value.trim();
+
+            if (!name) {
+                return Swal.fire('Hata', 'Lütfen bir laboratuvar adı girin!', 'error');
+            }
+
+            try {
+                const res = await fetch('/api/labs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ Name: name }) // Backend büyük harf "Name" bekliyor olabilir
+                });
+
+                if (res.ok) {
+                    Swal.fire('Başarılı', 'Laboratuvar oluşturuldu.', 'success');
+                    input.value = ''; // Kutuyu temizle
+                    await loadLabs(); // Listeyi anında yenile
+                    if (typeof loadStats === "function") loadStats(); // Dashboard'u güncelle
+                } else {
+                    const err = await res.text();
+                    Swal.fire('Hata', 'Ekleme başarısız: ' + err, 'error');
+                }
+            } catch (e) {
+                Swal.fire('Hata', 'Sunucu bağlantısı sağlanamadı!', 'error');
+            }
+        }
+
+        async function delLab(id) {
+            if (!id) return;
+
+            const confirm = await Swal.fire({
+                title: 'Emin misiniz?',
+                text: "Bu laboratuvarı silerseniz içindeki PC tanımları etkilenebilir!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#6b1442',
+                confirmButtonText: 'Evet, sil!',
+                cancelButtonText: 'İptal'
+            });
+
+            if (confirm.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/labs/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (res.ok) {
+                        Swal.fire('Silindi!', 'Laboratuvar başarıyla silindi.', 'success');
+                        await loadLabs(); // Listeyi tazele
+                        if (typeof loadStats === "function") loadStats();
+                    } else {
+                        const msg = await res.text();
+                        // Eğer lab içinde PC varsa silmeye izin vermeyebilir, hatayı gösterelim
+                        Swal.fire('Hata', 'Silinemedi: ' + msg, 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('Hata', 'Sunucuya ulaşılamadı!', 'error');
+                }
+            }
+        }
+
+        // --- BİLGİSAYARLAR ---
+        async function loadPcs() {
+            const [labRes, pcRes] = await Promise.all([fetch('/api/labs'), fetch('/api/computers')]);
+            const labs = await labRes.json();
+            const pcs = await pcRes.json();
+
+            const pcLabSelect = document.getElementById('pcLab');
+            if (pcLabSelect) {
+                pcLabSelect.innerHTML = labs.map(l => `<option value="${l.id || l.Id}">${l.name || l.Name}</option>`).join('');
+            }
+
+            document.getElementById('pcList').innerHTML = pcs.map(p => {
+                const labObj = labs.find(l => (l.id || l.Id) === (p.labId || p.LabId));
+                const labName = labObj ? (labObj.name || labObj.Name) : 'Belirsiz';
+                return `
+                    <tr>
+                        <td><b>${p.assetCode || p.AssetCode}</b></td>
+                        <td><span class="badge bg-secondary">${labName}</span></td>
+                        <td>${p.brand || p.Brand || 'PC'}</td>
+                        <td><small>${p.processor || p.Processor || ''} / ${p.ram || ''}GB</small></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm text-danger border-0" onclick="delPC(${p.id || p.Id})"><i class="bi bi-trash3-fill"></i></button>
+                        </td>
+                    </tr>`;
+            }).join('');
+        }
+
+        async function addPC() {
+            const labSelect = document.getElementById('pcLab');
+            const labId = parseInt(labSelect.value);
+            const labName = labSelect.options[labSelect.selectedIndex].text;
+
+            // Otomatik AssetCode
+            const uniqueAssetCode = `${labName.substring(0, 3).toUpperCase()}-${Math.floor(100 + Math.random() * 899)}`;
+
+            // Input değerlerini al
+            const mod = document.getElementById('pcMod').value;
+            const cpu = document.getElementById('pcCpu').value;
+            const ram = document.getElementById('pcRam').value;
+            const st = document.getElementById('pcSt').value;
+
+            if (!mod) return Swal.fire('Hata', 'Marka/Model boş olamaz', 'error');
+
+            // VERİTABANININ İSTEDİĞİ DATA
+            const data = {
+                LabId: labId,
+                AssetCode: uniqueAssetCode,
+                Brand: mod,
+                Model: mod,
+                Processor: cpu,
+                Ram: parseInt(ram) || 0,
+                Storage: parseInt(st) || 0,
+                // İŞTE EKSİK OLAN VE HATAYA SEBEP OLAN ALAN BURASI:
+                Specs: `${cpu} / ${ram}GB RAM / ${st}GB SSD`,
+                Status: "Boşta"
+            };
+
+            try {
+                const res = await fetch('/api/computers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    Swal.fire('Başarılı', 'Bilgisayar envantere eklendi!', 'success');
+                    // Formu temizle
+                    document.getElementById('pcMod').value = "";
+                    document.getElementById('pcCpu').value = "";
+                    document.getElementById('pcRam').value = "";
+                    document.getElementById('pcSt').value = "";
+
+                    await loadPcs(); // Listeyi yenile
+                    await loadStats(); // Dashboard rakamlarını yenile
+                } else {
+                    const errorText = await res.text();
+                    Swal.fire('Hata', 'Sunucu Hatası: ' + errorText, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Hata', 'Bağlantı hatası oluştu!', 'error');
+            }
+        }
+
+        async function delPC(id) {
+            // ID kontrolü yapalım
+            if (!id) return console.error("Silinecek PC ID'si bulunamadı!");
+
+            const res = await Swal.fire({
+                title: 'Emin misiniz?',
+                text: "Bu bilgisayar envanterden kalıcı olarak silinecek!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#6b1442',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Evet, sil!',
+                cancelButtonText: 'İptal'
+            });
+
+            if (res.isConfirmed) {
+                try {
+                    const response = await fetch(`/api/computers/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        Swal.fire('Silindi!', 'Bilgisayar başarıyla kaldırıldı.', 'success');
+                        // Tabloyu anında güncellemek için:
+                        await loadPcs();
+                        if (typeof loadStats === "function") loadStats();
+                    } else {
+                        const errorMsg = await response.text();
+                        Swal.fire('Hata', 'Silme başarısız: ' + errorMsg, 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Hata', 'Sunucuya bağlanılamadı!', 'error');
+                }
+            }
+        }
+
+        // --- ZİMMETLEME (DÜZELTİLDİ) ---
+        async function loadAssigns() {
+            const [pcRes, assignRes] = await Promise.all([fetch('/api/computers'), fetch('/api/assignments')]);
+            const pcs = await pcRes.json();
+            const assigns = await assignRes.json();
+
+            // Boştaki PC'leri Dropdown'a doldur
+            const availablePcs = pcs.filter(p => !p.userId && !p.UserId);
+            const asPcSelect = document.getElementById('asPc');
+            if (asPcSelect) {
+                asPcSelect.innerHTML = availablePcs.length > 0
+                    ? availablePcs.map(p => `<option value="${p.id || p.Id}">${p.assetCode || p.AssetCode} - ${p.brand || p.Brand}</option>`).join('')
+                    : '<option value="">Boşta PC Yok</option>';
+            }
+
+            // Sağ taraftaki listeyi doldur
+            document.getElementById('asList').innerHTML = assigns.map(a => `
+                <tr>
+                    <td>${a.assetCode || a.AssetCode || 'PC'}</td>
+                    <td><b>${a.fullName || a.FullName || a.studentName || 'İsimsiz'}</b></td>
+                    <td>${a.studentId || a.StudentId}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-warning" onclick="delAs(${a.pcId || a.PcId})">
+                            <i class="bi bi-arrow-return-left"></i> Geri Al
+                        </button>
+                    </td>
+                </tr>`).join('');
+        }
+
+        async function doAssign() {
+            const pcId = document.getElementById('asPc').value;
+            const sId = document.getElementById('asSid').value;
+            // Senin HTML'inde öğrenci adı için id="asSname" kullanılmış
+            const sName = document.getElementById('asSname').value;
+
+            if (!pcId || !sId || !sName) {
+                return Swal.fire('Uyarı', 'Lütfen tüm alanları (PC, Numara, İsim) doldurun!', 'warning');
+            }
+
+            const data = {
+                ComputerId: parseInt(pcId),
+                StudentId: sId,
+                FullName: sName
+            };
+
+            try {
+                const res = await fetch('/api/assign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    Swal.fire('Başarılı', 'Zimmetleme yapıldı!', 'success');
+
+                    // Formu temizle
+                    document.getElementById('asSid').value = "";
+                    document.getElementById('asSname').value = "";
+
+                    // LİSTELERİ VE DASHBOARD'U ANINDA GÜNCELLE
+                    await loadAssigns(); // Sağ taraftaki tablo
+                    await loadPcs();     // Boştaki PC listesi (dropdown)
+                    await loadStats();   // Üstteki kutucuklar
+                } else {
+                    const errorMsg = await res.text();
+                    Swal.fire('Hata', 'Kayıt yapılamadı: ' + errorMsg, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Hata', 'Sunucu bağlantısı koptu!', 'error');
+            }
+        }
+
+        async function delAs(pcId) {
+            const res = await fetch(`/api/assign/${pcId}`, { method: 'DELETE' });
+            if (res.ok) {
+                Swal.fire('Başarılı', 'Zimmet kaldırıldı.', 'success');
+                loadAssigns();
+                loadStats();
+            }
+        }
+
+        function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+        window.onload = loadStats;
+    </script>
+</body>
+</html>

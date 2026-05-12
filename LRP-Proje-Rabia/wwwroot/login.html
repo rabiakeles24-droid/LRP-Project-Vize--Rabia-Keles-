@@ -1,0 +1,131 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>LRP - Giriş Yap</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .login-container {
+            background: linear-gradient(135deg, #3a0a24 0%, #6b1442 100%); /* Mürdüm gradyan */
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: white;
+            padding: 3rem;
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+            .login-card i {
+                color: #6b1442;
+                font-size: 3.5rem;
+                margin-bottom: 1rem;
+            }
+
+        .form-control {
+            border-radius: 50px;
+            padding: 0.75rem 1.5rem;
+            border: 2px solid #eee;
+            margin-bottom: 1rem;
+        }
+
+            .form-control:focus {
+                border-color: #6b1442;
+                box-shadow: none;
+            }
+
+        .btn-murdum {
+            background: #6b1442;
+            color: white;
+            border-radius: 50px;
+            padding: 0.75rem;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s;
+            border: none;
+        }
+
+            .btn-murdum:hover {
+                background: #3a0a24;
+                transform: scale(1.03);
+                color: white;
+            }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="login-card shadow-lg">
+            <i class="fas fa-flask"></i>
+            <h3 class="fw-bold mb-4" style="color: #3a0a24;">LRP Giriş Paneli</h3>
+
+            <div id="loginAlert" class="alert alert-danger d-none small">Kullanıcı adı veya şifre hatalı!</div>
+
+            <form id="loginForm">
+                <div class="text-start ps-3 mb-1">
+                    <label class="small fw-bold text-muted">KULLANICI ADI</label>
+                </div>
+                <input type="text" id="username" class="form-control" placeholder="Örn: admin" required>
+
+                <div class="text-start ps-3 mb-1">
+                    <label class="small fw-bold text-muted">ŞİFRE</label>
+                </div>
+                <input type="password" id="password" class="form-control" value="123" required>
+
+                <button type="submit" class="btn btn-murdum mt-3 shadow">Giriş Yap</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault(); // Sayfanın yenilenmesini engeller
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const alertBox = document.getElementById('loginAlert');
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    localStorage.setItem('user', JSON.stringify(user));
+
+                    // Rol kontrolü ve yönlendirme
+                    if (user.role === 'Admin') {
+                        window.location.href = 'index.html'; // Admin ise ana sayfaya
+                    } else {
+                        window.location.href = 'student.html'; // Öğrenci ise kendi sayfasına
+                    }
+                } else {
+                    alertBox.classList.remove('d-none'); // Hata mesajını göster
+                }
+            } catch (error) {
+                console.error("Giriş hatası:", error);
+                alertBox.innerText = "Sunucuya bağlanılamadı!";
+                alertBox.classList.remove('d-none');
+            }
+        };
+    </script>
+</body>
+</html>
